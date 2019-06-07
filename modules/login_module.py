@@ -1,8 +1,12 @@
 import base64
 import os
-import urllib2
-import urllib
-import cookielib
+import urllib.request
+import urllib.error
+import urllib.parse
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.cookiejar
 import re
 from random import choice
 from bs4 import BeautifulSoup as beatsop
@@ -18,17 +22,18 @@ user_agents = [
     'Lynx/2.8.5rel.1 libwww-FM/2.14 SSL-MM/1.4.1 GNUTLS/1.2.9',
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111']
 
-cookie_jar = cookielib.CookieJar()
+cookie_jar = http.cookiejar.CookieJar()
 
-opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+opener = urllib.request.build_opener(
+    urllib.request.HTTPCookieProcessor(cookie_jar))
 opener.addheaders = [('User-agent', choice(user_agents))]
-urllib2.install_opener(opener)
+urllib.request.install_opener(opener)
 
 
 # Need this to handle redirects for POST. So new URLs
-class SmartRedirectHandler(urllib2.HTTPRedirectHandler):
+class SmartRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPRedirectHandler.http_error_302(
+        result = urllib.request.HTTPRedirectHandler.http_error_302(
             self, req, fp, code, msg, headers)
         result.status = code
         result.headers = headers
@@ -46,21 +51,21 @@ def parseDataFile(input):
     for line in file:
         if line.startswith("Category"):
             category = {}
-            category['category'] = re.findall("Category:\s(.*)", line)
+            category['category'] = re.findall(r"Category:\s(.*)", line)
         elif line.startswith("identifier"):
-            identifier = re.findall("identifier:\s(.*)", line)
+            identifier = re.findall(r"identifier:\s(.*)", line)
             category['identifier'] = identifier
         elif line.startswith("invalid_identifier"):
-            identifier = re.findall("invalid_identifier:\s(.*)", line)
+            identifier = re.findall(r"invalid_identifier:\s(.*)", line)
             category['invalid_identifier'] = identifier
         elif line.startswith("login_type"):
-            identifier = re.findall("login_type:\s(.*)", line)
+            identifier = re.findall(r"login_type:\s(.*)", line)
             category['login_type'] = identifier
         elif line.startswith("default creds"):
-            defaultCreds = re.findall("default creds:\s(.*)", line)
+            defaultCreds = re.findall(r"default creds:\s(.*)", line)
             category['defaultCreds'] = defaultCreds
         elif line.startswith("default path"):
-            defaultPath = re.findall("default path:\s(.*)", line)
+            defaultPath = re.findall(r"default path:\s(.*)", line)
             category['defaultPath'] = defaultPath
 
             currentCategory.append(category)
@@ -89,12 +94,12 @@ def parseURL(url, protocol):
         url = protocol + '://' + url
     try:
         # consider a timeout for this because it takes awhile
-        sock = urllib2.urlopen(url, timeout=3)
+        sock = urllib.request.urlopen(url, timeout=3)
         htmlSource = sock.read()
         sock.close()
-    except urllib2.URLError, e:
+    except urllib.error.URLError as e:
         raise Exception("There was an error: {}".format(e))
-    except Exception, e:
+    except Exception as e:
         raise Exception("There was an error: {}".format(e))
     return htmlSource
 
@@ -102,18 +107,18 @@ def parseURL(url, protocol):
 def checkValidUrl(url):
     error = False
     try:
-        response = urllib2.urlopen(url, timeout=3)
-    except urllib2.URLError, e:
+        response = urllib.request.urlopen(url, timeout=3)
+    except urllib.error.URLError as e:
         error = True
         if isinstance(e.reason, socket.timeout):
-            print "error with {}".format(url)
+            print("error with {}".format(url))
 
-    except socket.timeout, e:
+    except socket.timeout as e:
         error = True
-        print("There was an error with {}").format(url)
-    except Exception, e:
+        print(("There was an error with {}").format(url))
+    except Exception as e:
         error = True
-        print "{} issue with {}".format(url, e)
+        print("{} issue with {}".format(url, e))
 
     if error:
         return e.getcode()
@@ -135,8 +140,8 @@ def handleCategoryMatch(data, http_object):
     if logintype[0] == 'http_post':
         redirect = False
         try:
-            req = urllib2.Request(origTarget)
-            opener = urllib2.build_opener(SmartRedirectHandler())
+            req = urllib.request.Request(origTarget)
+            opener = urllib.request.build_opener(SmartRedirectHandler())
             rsp = opener.open(req)
             code = rsp.getcode()
 
@@ -147,7 +152,7 @@ def handleCategoryMatch(data, http_object):
                 target = rsp.geturl()
                 redirect = True
 
-        except urllib2.URLError, e:
+        except urllib.error.URLError as e:
             raise Exception("There was an error: {}".format(e))
 
         htmlSource = parseURL(origTarget, '')
@@ -157,7 +162,7 @@ def handleCategoryMatch(data, http_object):
         inputs = inputs[0]
 
     for x in creds1:
-        seperated = re.split(',\s*', x)
+        seperated = re.split(r',\s*', x)
 
     for y in seperated:
         creds = y.split(':')
@@ -169,7 +174,8 @@ def handleCategoryMatch(data, http_object):
             check = httpAuth(target, username, password)
             # Auth was successful, no need to continue
             if check:
-                http_object.default_creds = "Default creds are valid: {}".format(y)
+                http_object.default_creds = "Default creds are valid: {}".format(
+                    y)
                 http_object.category = "successfulLogin"
                 http_object._remote_login = target
                 break
@@ -179,8 +185,10 @@ def handleCategoryMatch(data, http_object):
                 postData = getPostData(inputs, username, password)
                 # to be used for logging
                 if loginPost(origTarget, target, postData, data):
-                    print "\x1b[32m[+]Form Successful login against {} using {}\x1b[0m".format(target, y)
-                    http_object.default_creds = "Default creds are valid: {}".format(y)
+                    print(
+                        "\x1b[32m[+]Form Successful login against {} using {}\x1b[0m".format(target, y))
+                    http_object.default_creds = "Default creds are valid: {}".format(
+                        y)
                     http_object.category = "successfulLogin"
                     http_object._remote_login = target
                     break
@@ -188,7 +196,7 @@ def handleCategoryMatch(data, http_object):
                     http_object.category = "identifiedLogin"
 
         else:
-            print 'incorrect login type for {}'.format(data)
+            print('incorrect login type for {}'.format(data))
     return http_object
 
 
@@ -203,7 +211,7 @@ def checkLoginForm(html_data):
                 loginForm = True
         return loginForm
     except Exception:
-            pass
+        pass
 
 
 def getInputFields(html_data):
@@ -228,7 +236,7 @@ def getInputFields(html_data):
         allInputs[1] = action
         return allInputs
     except Exception as e:
-            print e
+        print(e)
 
 
 def updateTarget(target, action):
@@ -265,7 +273,7 @@ def getPostData(inputs, uname, pword):
                             try:
                                 postData[y['name']] = y['value'].encode(
                                     'utf-8')
-                            except:
+                            except BaseException:
                                 pass
                         else:
                             postData[y['name']] = ""
@@ -274,13 +282,13 @@ def getPostData(inputs, uname, pword):
                             try:
                                 postData[y['name']] = y['value'].encode(
                                     'utf-8')
-                            except:
+                            except BaseException:
                                 pass
                         else:
                             postData[y['name']] = ""
         return postData
 
-    except:
+    except BaseException:
         pass
 
 
@@ -294,17 +302,18 @@ def loginPost(url, target, postData, data, stillTrying=False):
     try:
         result = False
         # acquire cookie
-        req = urllib2.Request(url)
-        rsp = urllib2.urlopen(req, timeout=3)
+        req = urllib.request.Request(url)
+        rsp = urllib.request.urlopen(req, timeout=3)
 
         # do POST
-        pData = urllib.urlencode(postData)
-        req = urllib2.Request(target, pData)
-        rsp = urllib2.urlopen(req, timeout=3)
+        pData = urllib.parse.urlencode(postData)
+        req = urllib.request.Request(target, pData)
+        rsp = urllib.request.urlopen(req, timeout=3)
         content = rsp.read()
 
         if stillTrying is False:
-            if data['invalid_identifier'][0] != '401' and rsp.getcode() != 401 and data['invalid_identifier'][0] not in content:
+            if data['invalid_identifier'][0] != '401' and rsp.getcode(
+            ) != 401 and data['invalid_identifier'][0] not in content:
                 # success
                 result = True
             elif data['invalid_identifier'][0] == '401' and rsp.getcode() != 401:
@@ -315,27 +324,28 @@ def loginPost(url, target, postData, data, stillTrying=False):
                 result = False
 
         else:
-            if any(x in content.lower() for x in failChecks) or rsp.getcode() == 401:
+            if any(x in content.lower()
+                   for x in failChecks) or rsp.getcode() == 401:
                 result = False
             else:
                 result = True
 
-    except urllib2.URLError, e:
+    except urllib.error.URLError as e:
         if isinstance(e.reason, socket.timeout):
             raise Exception("There was an error with {}".format(e))
             result = False
 
-    except socket.timeout, e:
+    except socket.timeout as e:
         raise Exception("There was an error with {}".format(e))
         result = False
-    except Exception, e:
+    except Exception as e:
         raise Exception("There was an error: {}".format(e))
 
     return result
 
 
 def httpAuth(target, username, password):
-    # This function will perform http basic authentication   
+    # This function will perform http basic authentication
     header = {}
     creds = '{}{}{}'.format(username, ':', password)
 
@@ -344,13 +354,15 @@ def httpAuth(target, username, password):
         base64string = base64.encodestring(
             '%s:%s' % (username, password)).replace('\n', '')
         header["Authorization"] = "Basic {}".format(base64string)
-        request = urllib2.Request(target, "", header)
-        #added this because if data is in the request it will default to POST request
+        request = urllib.request.Request(target, "", header)
+        # added this because if data is in the request it will default to POST
+        # request
         request.get_method = lambda: "GET"
-        result = urllib2.urlopen(request)
+        result = urllib.request.urlopen(request)
         success = True
-        print "\x1b[32m[+]Http basic Successful login against {} using {}\x1b[0m".format(target, creds)
-    except:
+        print(
+            "\x1b[32m[+]Http basic Successful login against {} using {}\x1b[0m".format(target, creds))
+    except BaseException:
         success = False
     return success
 
@@ -424,8 +436,11 @@ def findLogins(http_object, creds, urls):
                             inputs, tempCred[0], tempCred[1])
                         # to be used for loggin
                         if loginPost(target, target, postData, "", True):
-                            print "\x1b[32m[+]Form Successful login against {} using {}\x1b[0m".format(origTarget, ':'.join(tempCred))
-                            http_object.default_creds = "Default creds are valid: {}".format(tempCred)
+                            print(
+                                "\x1b[32m[+]Form Successful login against {} using {}\x1b[0m".format(
+                                    origTarget, ':'.join(tempCred)))
+                            http_object.default_creds = "Default creds are valid: {}".format(
+                                tempCred)
                             result = True
                             http_object.category = "successfulLogin"
                             http_object._remote_login = target
@@ -438,7 +453,7 @@ def findLogins(http_object, creds, urls):
 def checkCreds(http_object):
     identifier = False
     target = http_object.remote_system
-    print "Attempting active scan against {}".format(target)
+    print("Attempting active scan against {}".format(target))
 
     try:
         dataFile = os.path.join(os.path.dirname(
@@ -448,7 +463,7 @@ def checkCreds(http_object):
     except IOError:
         print("[*] WARNING: Credentials file not in the same directory"
               " as EyeWitness")
-        print '[*] Skipping credential check'
+        print('[*] Skipping credential check')
 
     try:
         # Loop through and see if there are any matches from the source code
@@ -481,9 +496,12 @@ def checkCreds(http_object):
                             if loginPost(
                                     http_object.remote_system, target,
                                     postData, data, True):
-                                print "\x1b[32m[+]Form Successful login against {} using {}s\x1b[0m".format(http_object.remote_system, ':'.join(tempCred))
+                                print(
+                                    "\x1b[32m[+]Form Successful login against {} using {}s\x1b[0m".format(
+                                        http_object.remote_system, ':'.join(tempCred)))
                                 http_object.category = "successfulLogin"
-                                http_object.default_creds = "Default creds are valid: {}".format(tempCred)
+                                http_object.default_creds = "Default creds are valid: {}".format(
+                                    tempCred)
                                 http_object._remote_login = target
                                 break
                             else:
@@ -502,9 +520,10 @@ def checkCreds(http_object):
                 if httpAuth(
                         http_object.remote_system, tempCred[0], tempCred[1]):
                     http_object.category = "successfulLogin"
-                    http_object.default_creds = "Default creds are valid: {}".format(tempCred)
+                    http_object.default_creds = "Default creds are valid: {}".format(
+                        tempCred)
                     break
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
     return http_object

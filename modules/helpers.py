@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 import hashlib
 import os
 import platform
@@ -12,8 +12,8 @@ import glob
 import socket
 from netaddr import IPAddress
 from netaddr.core import AddrFormatError
-from urlparse import urlparse
-from login_module import checkCreds
+from urllib.parse import urlparse
+from .login_module import checkCreds
 
 
 class XML_Parser(xml.sax.ContentHandler):
@@ -74,7 +74,8 @@ class XML_Parser(xml.sax.ContentHandler):
                 elif "http-alt" == attributes['name']:
                     self.protocol = "http"
                 elif "tunnel" in attributes:
-                    if "ssl" in attributes['tunnel'] and not "smtp" in attributes['name'] and not "imap" in attributes['name'] and not "pop3" in attributes['name']:
+                    if "ssl" in attributes['tunnel'] and "smtp" not in attributes[
+                            'name'] and "imap" not in attributes['name'] and "pop3" not in attributes['name']:
                         self.protocol = "https"
                 elif "vnc" in attributes['name']:
                     self.protocol = "vnc"
@@ -120,7 +121,8 @@ class XML_Parser(xml.sax.ContentHandler):
         if self.masscan or self.nmap:
             if tag == "service":
                 if not self.only_ports:
-                    if (self.system_name is not None) and (self.port_number is not None) and self.port_open:
+                    if (self.system_name is not None) and (
+                            self.port_number is not None) and self.port_open:
                         if self.protocol == "http" or self.protocol == "https":
                             built_url = self.protocol + "://" + self.system_name + ":" + self.port_number
                             if built_url not in self.url_list:
@@ -143,7 +145,10 @@ class XML_Parser(xml.sax.ContentHandler):
                             if self.system_name not in self.rdp_list:
                                 self.rdp_list.append(self.system_name)
                 else:
-                    if (self.system_name is not None) and (self.port_number is not None) and self.port_open and int(self.port_number.encode('utf-8')) in self.only_ports:
+                    if (
+                            self.system_name is not None) and (
+                            self.port_number is not None) and self.port_open and int(
+                            self.port_number.encode('utf-8')) in self.only_ports:
                         if self.protocol == "http" or self.protocol == "https":
                             built_url = self.protocol + "://" + self.system_name
                             if built_url not in self.url_list:
@@ -171,8 +176,9 @@ class XML_Parser(xml.sax.ContentHandler):
                 self.port_open = False
 
             elif tag == "port":
-                if not self.only_ports and (self.protocol == None):
-                    if (self.port_number is not None) and self.port_open and (self.system_name is not None):
+                if not self.only_ports and (self.protocol is None):
+                    if (self.port_number is not None) and self.port_open and (
+                            self.system_name is not None):
                         if self.port_number in self.http_ports:
                             self.protocol = 'http'
                             built_url = self.protocol + "://" + self.system_name + ":" + self.port_number
@@ -186,7 +192,8 @@ class XML_Parser(xml.sax.ContentHandler):
                                 self.url_list.append(built_url)
                                 self.num_urls += 1
                 else:
-                    if (self.port_number is not None) and self.port_open and (self.system_name is not None) and int(self.port_number.encode('utf-8')) in self.only_ports:
+                    if (self.port_number is not None) and self.port_open and (
+                            self.system_name is not None) and int(self.port_number.encode('utf-8')) in self.only_ports:
                         if self.port_number in self.http_ports:
                             self.protocol = 'http'
                             built_url = self.protocol + "://" + self.system_name + ":" + self.port_number
@@ -234,7 +241,8 @@ class XML_Parser(xml.sax.ContentHandler):
                 self.analyze_plugin_output = False
             if tag == "ReportItem":
                 if not self.only_ports:
-                    if (self.system_name is not None) and (self.protocol is not None) and self.service_detection:
+                    if (self.system_name is not None) and (
+                            self.protocol is not None) and self.service_detection:
                         if self.protocol == "http" or self.protocol == "https":
                             built_url = self.protocol + "://" + self.system_name + ":" + self.port_number
                             if built_url not in self.url_list:
@@ -246,7 +254,10 @@ class XML_Parser(xml.sax.ContentHandler):
                             if self.system_name not in self.rdp_list:
                                 self.rdp_list.append(self.system_name)
                 else:
-                    if (self.system_name is not None) and (self.protocol is not None) and self.service_detection and int(self.port_number.encode('utf-8')) in self.only_ports:
+                    if (
+                            self.system_name is not None) and (
+                            self.protocol is not None) and self.service_detection and int(
+                            self.port_number.encode('utf-8')) in self.only_ports:
                         if self.protocol == "http" or self.protocol == "https":
                             built_url = self.protocol + "://" + self.system_name + ":" + self.port_number
                             if built_url not in self.url_list:
@@ -284,6 +295,7 @@ class XML_Parser(xml.sax.ContentHandler):
         if self.read_plugin_output:
             self.plugin_output += content
 
+
 def duplicate_check(cli_object):
     # This is used for checking for duplicate images
     # if it finds any, it removes them and uses a single image
@@ -297,30 +309,34 @@ def duplicate_check(cli_object):
             pic_data = screenshot.read()
         md5_hash = hashlib.md5(pic_data).hexdigest()
         if md5_hash in hash_files:
-            hash_files[md5_hash].append(name.split('/')[-2] + '/' + name.split('/')[-1])
+            hash_files[md5_hash].append(name.split(
+                '/')[-2] + '/' + name.split('/')[-1])
         else:
-            hash_files[md5_hash] = [name.split('/')[-2] + '/' + name.split('/')[-1]]
+            hash_files[md5_hash] = [name.split(
+                '/')[-2] + '/' + name.split('/')[-1]]
 
     for html_file in glob.glob(cli_object.d + '/*.html'):
         report_files.append(html_file)
 
-    for hex_value, file_dict in hash_files.items():
+    for hex_value, file_dict in list(hash_files.items()):
         total_files = len(file_dict)
         if total_files > 1:
             original_pic_name = file_dict[0]
-            for num in xrange(1, total_files):
+            for num in range(1, total_files):
                 next_filename = file_dict[num]
                 for report_page in report_files:
                     with open(report_page, 'r') as report:
                         page_text = report.read()
-                    page_text = page_text.replace(next_filename, original_pic_name)
+                    page_text = page_text.replace(
+                        next_filename, original_pic_name)
                     with open(report_page, 'w') as report_out:
                         report_out.write(page_text)
                 os.remove(cli_object.d + '/' + next_filename)
                 with open(cli_object.d + "/Requests.csv", 'r') as csv_port_file:
                     csv_lines = csv_port_file.read()
                     if next_filename in csv_lines:
-                        csv_lines = csv_lines.replace(next_filename, original_pic_name)
+                        csv_lines = csv_lines.replace(
+                            next_filename, original_pic_name)
                 with open(cli_object.d + "/Requests.csv", 'w') as csv_port_writer:
                     csv_port_writer.write(csv_lines)
     return
@@ -420,24 +436,26 @@ def textfile_parser(file_to_parse, cli_obj):
                         if cli_obj.prepend_https:
                             for port in cli_obj.only_ports:
                                 urls.append("http://" + line + ':' + str(port))
-                                urls.append("https://" + line + ':' + str(port))
+                                urls.append(
+                                    "https://" + line + ':' + str(port))
                         else:
                             for port in cli_obj.only_ports:
                                 urls.append(line + ':' + str(port))
-        
+
         # Look at URLs and make CSV output of open ports unless already parsed from XML output
         # This parses the text file
         for url_again in all_urls:
             url_again = url_again.strip()
             complete_urls.append(url_again)
             if url_again.count(":") == 2:
-            	try:
-                	port_number = int(url_again.split(":")[2].split("/")[0])
+                try:
+                    port_number = int(url_again.split(":")[2].split("/")[0])
                 except ValueError:
-                	print("ERROR: You potentially provided an mal-formed URL!")
-                	print("ERROR: URL is - " + url_again)
-                	sys.exit()
-                hostname_again = url_again.split(":")[0] + ":" + url_again.split(":")[1] + ":" + url_again.split(":")[2]
+                    print("ERROR: You potentially provided an mal-formed URL!")
+                    print(("ERROR: URL is - " + url_again))
+                    sys.exit()
+                hostname_again = url_again.split(
+                    ":")[0] + ":" + url_again.split(":")[1] + ":" + url_again.split(":")[2]
                 if port_number in openports:
                     openports[port_number] += "," + hostname_again
                 else:
@@ -456,7 +474,7 @@ def textfile_parser(file_to_parse, cli_obj):
 
         # Start prepping to write out the CSV
         csv_data = "URL"
-        ordered_ports = sorted(openports.iterkeys())
+        ordered_ports = sorted(openports.keys())
         for opn_prt in ordered_ports:
             csv_data += "," + str(opn_prt)
 
@@ -479,9 +497,11 @@ def textfile_parser(file_to_parse, cli_obj):
 
     except IOError:
         if cli_obj.x is not None:
-            print "ERROR: The XML file you provided does not have any active web servers!"
+            print(
+                "ERROR: The XML file you provided does not have any active web servers!")
         else:
-            print "ERROR: You didn't give me a valid file name! I need a valid file containing URLs!"
+            print(
+                "ERROR: You didn't give me a valid file name! I need a valid file containing URLs!")
         sys.exit()
 
 
@@ -590,23 +610,28 @@ def get_ua_values(cycle_value):
 
     # Random mobile User agents
     mobile_uagents = {
-        "BlackBerry": ("Mozilla/5.0 (BlackBerry; U; BlackBerry 9900; en)"
-                       " AppleWebKit/534.11+ (KHTML, like Gecko) Version/7.1.0.346 Mobile"
-                       " Safari/534.11+"),
-        "Android": ("Mozilla/5.0 (Linux; U; Android 2.3.5; en-us; HTC Vision"
-                    " Build/GRI40) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0"
-                    " Mobile Safari/533.1"),
-        "IEMobile9.0": ("Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS"
-                        " 7.5; Trident/5.0; IEMobile/9.0)"),
-        "OperaMobile12.02": ("Opera/12.02 (Android 4.1; Linux; Opera"
-                             " Mobi/ADR-1111101157; U; en-US) Presto/2.9.201 Version/12.02"),
-        "iPadSafari6.0": ("Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X)"
-                          " AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d"
-                          " Safari/8536.25"),
-        "iPhoneSafari7.0.6": ("Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_6 like"
-                              " Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0"
-                              " Mobile/11B651 Safari/9537.53")
-    }
+        "BlackBerry": (
+            "Mozilla/5.0 (BlackBerry; U; BlackBerry 9900; en)"
+            " AppleWebKit/534.11+ (KHTML, like Gecko) Version/7.1.0.346 Mobile"
+            " Safari/534.11+"),
+        "Android": (
+            "Mozilla/5.0 (Linux; U; Android 2.3.5; en-us; HTC Vision"
+            " Build/GRI40) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0"
+            " Mobile Safari/533.1"),
+        "IEMobile9.0": (
+            "Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS"
+            " 7.5; Trident/5.0; IEMobile/9.0)"),
+        "OperaMobile12.02": (
+            "Opera/12.02 (Android 4.1; Linux; Opera"
+            " Mobi/ADR-1111101157; U; en-US) Presto/2.9.201 Version/12.02"),
+        "iPadSafari6.0": (
+            "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X)"
+            " AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d"
+            " Safari/8536.25"),
+        "iPhoneSafari7.0.6": (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_6 like"
+            " Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0"
+            " Mobile/11B651 Safari/9537.53")}
 
     # Web App Vuln Scanning user agents (give me more if you have any)
     scanner_uagents = {
@@ -617,9 +642,15 @@ def get_ua_values(cycle_value):
     }
 
     # Combine all user agents into a single dictionary
-    all_combined_uagents = dict(desktop_uagents.items() + misc_uagents.items()
-                                + crawler_uagents.items() +
-                                mobile_uagents.items())
+    all_combined_uagents = dict(
+        list(
+            desktop_uagents.items()) +
+        list(
+            misc_uagents.items()) +
+        list(
+            crawler_uagents.items()) +
+        list(
+            mobile_uagents.items()))
 
     cycle_value = cycle_value.lower()
 
@@ -636,9 +667,9 @@ def get_ua_values(cycle_value):
     elif cycle_value == "all":
         return all_combined_uagents
     else:
-        print "[*] Error: You did not provide the type of user agents\
-         to cycle through!".replace('    ', '')
-        print "[*] Error: Defaulting to desktop browser user agents."
+        print("[*] Error: You did not provide the type of user agents\
+         to cycle through!".replace('    ', ''))
+        print("[*] Error: Defaulting to desktop browser user agents.")
         return desktop_uagents
 
 
@@ -649,16 +680,23 @@ def title_screen():
         os.system('cls')
     else:
         os.system('clear')
-    print "#" * 80
-    print "#" + " " * 34 + "EyeWitness" + " " * 34 + "#"
-    print "#" * 80
-    print "#" + " " * 11 + "FortyNorth Security - https://www.fortynorthsecurity.com" + " " * 11 + "#"
-    print "#" * 80 + "\n"
+    print("#" * 80)
+    print("#" + " " * 34 + "EyeWitness" + " " * 34 + "#")
+    print("#" * 80)
+    print(
+        "#" +
+        " " *
+        11 +
+        "FortyNorth Security - https://www.fortynorthsecurity.com" +
+        " " *
+        11 +
+        "#")
+    print("#" * 80 + "\n")
 
     python_info = sys.version_info
     if python_info[0] is not 2 or python_info[1] < 7:
-        print "[*] Error: Your version of python is not supported!"
-        print "[*] Error: Please install Python 2.7.X"
+        print("[*] Error: Your version of python is not supported!")
+        print("[*] Error: Please install Python 2.7.X")
         sys.exit()
     else:
         pass
@@ -674,7 +712,7 @@ def strip_nonalphanum(string):
     Returns:
         String: String stripped of all non-alphanumeric characters
     """
-    todel = ''.join(c for c in map(chr, range(256)) if not c.isalnum())
+    todel = ''.join(c for c in map(chr, list(range(256))) if not c.isalnum())
     return string.translate(None, todel)
 
 
@@ -692,7 +730,7 @@ def do_jitter(cli_parsed):
         sleep_value = sleep_value * .01
         sleep_value = 1 - sleep_value
         sleep_value = sleep_value * cli_parsed.jitter
-        print "[*] Sleeping for " + str(sleep_value) + " seconds.."
+        print("[*] Sleeping for " + str(sleep_value) + " seconds..")
         try:
             time.sleep(sleep_value)
         except KeyboardInterrupt:
@@ -753,7 +791,12 @@ def create_folders_css(cli_parsed):
     local_path = os.path.dirname(os.path.realpath(__file__))
     # Move our jquery file to the local directory
     shutil.copy2(
-        os.path.join(local_path, '..', 'bin', 'jquery-1.11.3.min.js'), cli_parsed.d)
+        os.path.join(
+            local_path,
+            '..',
+            'bin',
+            'jquery-1.11.3.min.js'),
+        cli_parsed.d)
 
     # Write our stylesheet to disk
     with open(os.path.join(cli_parsed.d, 'style.css'), 'w') as f:
@@ -800,7 +843,8 @@ def default_creds_category(http_object):
                 # This is used if there is more than one "part" of the
                 # web page needed to make a signature Delimete the "signature"
                 # by ";" before the "|", and then have the creds after the "|"
-                if all([x.lower() in http_object.source_code.lower() for x in page_sig]):
+                if all([x.lower() in http_object.source_code.lower()
+                        for x in page_sig]):
                     if http_object.default_creds is None:
                         http_object.default_creds = cred_info
                     else:
@@ -821,7 +865,8 @@ def default_creds_category(http_object):
                 # This is used if there is more than one "part" of the
                 # web page needed to make a signature Delimete the "signature"
                 # by ";" before the "|", and then have the creds after the "|"
-                if all([x.lower() in http_object.source_code.lower() for x in cat_sig]):
+                if all([x.lower() in http_object.source_code.lower()
+                        for x in cat_sig]):
                     http_object.category = cat_name.strip()
                     break
 
@@ -833,38 +878,39 @@ def default_creds_category(http_object):
                     'Directory of /' in http_object.page_title):
                 http_object.category = 'dirlist'
             if '404 Not Found' in http_object.page_title:
-                http_object.category = 'notfound'        
+                http_object.category = 'notfound'
 
-        #Performs login against host to see if it is a valid login
-        if http_object._active_scan:            
+        # Performs login against host to see if it is a valid login
+        if http_object._active_scan:
             http_object = checkCreds(http_object)
 
         return http_object
     except IOError:
         print("[*] WARNING: Credentials file not in the same directory"
               " as EyeWitness")
-        print '[*] Skipping credential check'
+        print('[*] Skipping credential check')
         return http_object
 
 
 def open_file_input(cli_parsed):
     files = glob.glob(os.path.join(cli_parsed.d, '*report.html'))
     if len(files) > 0:
-        print('\n[*] Done! Report written in the {0} folder!').format(
-            cli_parsed.d)
-        print 'Would you like to open the report now? [Y/n]',
+        print(('\n[*] Done! Report written in the {0} folder!').format(
+            cli_parsed.d))
+        print('Would you like to open the report now? [Y/n]', end=' ')
         while True:
             try:
-                response = raw_input().lower()
+                response = input().lower()
                 if response is "":
                     return True
                 else:
                     return strtobool(response)
             except ValueError:
-                print "Please respond with y or n",
+                print("Please respond with y or n", end=' ')
     else:
-        print '[*] No report files found to open, perhaps no hosts were successful'
+        print('[*] No report files found to open, perhaps no hosts were successful')
         return False
+
 
 def class_info():
     class_image = '''MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM

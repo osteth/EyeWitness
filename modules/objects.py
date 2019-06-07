@@ -2,7 +2,7 @@ import cgi
 import os
 import re
 
-from helpers import strip_nonalphanum
+from .helpers import strip_nonalphanum
 
 
 class HTTPTableObject(object):
@@ -104,7 +104,8 @@ class HTTPTableObject(object):
 
     @remote_system.setter
     def remote_system(self, remote_system):
-        if remote_system.startswith('http://') or remote_system.startswith('https://'):
+        if remote_system.startswith(
+                'http://') or remote_system.startswith('https://'):
             pass
         else:
             if ':8443' in remote_system or ':443' in remote_system:
@@ -113,10 +114,12 @@ class HTTPTableObject(object):
                 remote_system = 'http://' + remote_system
 
         remote_system = remote_system.strip()
-        if 'http://' in remote_system and re.search(':80$', remote_system) is not None:
+        if 'http://' in remote_system and re.search(
+                ':80$', remote_system) is not None:
             remote_system = remote_system.replace(':80', '')
 
-        if 'https://' in remote_system and re.search(':443$', remote_system) is not None:
+        if 'https://' in remote_system and re.search(
+                ':443$', remote_system) is not None:
             remote_system = remote_system.replace(':443', '')
 
         self._remote_system = remote_system.strip()
@@ -134,7 +137,7 @@ class HTTPTableObject(object):
         if hasattr(self, '_headers'):
             return self._headers
         else:
-            missing = { "Missing Headers" : "No Headers found" }
+            missing = {"Missing Headers": "No Headers found"}
             return missing
 
     @headers.setter
@@ -201,7 +204,7 @@ class HTTPTableObject(object):
     def create_table_html(self):
         scr_path = os.path.relpath(self.screenshot_path, self.root_path)
         src_path = os.path.relpath(self.source_path, self.root_path)
-        html = u""
+        html = ""
         if self._remote_login is not None:
             html += ("""<tr>
             <td><div style=\"display: inline-block; width: 300px; word-wrap: break-word\">
@@ -232,7 +235,7 @@ class HTTPTableObject(object):
                 html += "<br><b>Default credentials:</b> {0}<br>".format(
                     self.sanitize(self.default_creds))
             except UnicodeEncodeError:
-                html += u"<br><b>Default credentials:</b> {0}<br>".format(
+                html += "<br><b>Default credentials:</b> {0}<br>".format(
                     self.sanitize(self.default_creds))
 
         if self.error_state is None:
@@ -243,15 +246,15 @@ class HTTPTableObject(object):
                 html += "\n<br><b> Page Title:</b>{0}\n".format(
                     'Unable to Display')
             except UnicodeEncodeError:
-                html += u"\n<br><b> Page Title:</b>{0}\n".format(
+                html += "\n<br><b> Page Title:</b>{0}\n".format(
                     self.sanitize(self.page_title))
 
-            for key, value in self.headers.items():
+            for key, value in list(self.headers.items()):
                 try:
                     html += '<br><b> {0}:</b> {1}\n'.format(
                         self.sanitize(key), self.sanitize(value))
                 except UnicodeEncodeError:
-                    html += u'<br><b> {0}:</b> {1}\n'.format(
+                    html += '<br><b> {0}:</b> {1}\n'.format(
                         self.sanitize(key), self.sanitize(value))
         if self.blank:
             html += ("""<br></td>
@@ -375,7 +378,7 @@ class UAObject(HTTPTableObject):
     def create_table_html(self, divid):
         scr_path = os.path.relpath(self.screenshot_path, self.root_path)
         src_path = os.path.relpath(self.source_path, self.root_path)
-        html = u""
+        html = ""
         html += ("""<tr class="hide {0}">
         <td><div style=\"display: inline-block; width: 300px; word-wrap: break-word\">
         <a href=\"{1}\" target=\"_blank\">{1}</a><br>
@@ -399,9 +402,9 @@ class UAObject(HTTPTableObject):
                 html += "<br><b>Default credentials:</b> {0}<br>".format(
                     self.sanitize(self.default_creds))
             except UnicodeEncodeError:
-                html += u"<br><b>Default credentials:</b> {0}<br>".format(
-		    self.sanitize(self.default_creds))
-                
+                html += "<br><b>Default credentials:</b> {0}<br>".format(
+                    self.sanitize(self.default_creds))
+
         try:
             html += "\n<br><b> Page Title: </b>{0}\n".format(
                 self.sanitize(self.page_title))
@@ -409,15 +412,15 @@ class UAObject(HTTPTableObject):
             html += "\n<br><b> Page Title:</b>{0}\n".format(
                 'Unable to Display')
         except UnicodeEncodeError:
-                html += u'<br><b> Page Title: </b>{0}\n'.format(
-                    self.sanitize(self.page_title))
+            html += '<br><b> Page Title: </b>{0}\n'.format(
+                self.sanitize(self.page_title))
 
-        for key, value in self.headers.items():
-            try: 
+        for key, value in list(self.headers.items()):
+            try:
                 html += '<br><b> {0}:</b> {1}\n'.format(
                     self.sanitize(key), self.sanitize(value))
             except UnicodeEncodeError:
-                html += u'<br><b> {0}:</b> {1}\n'.format(
+                html += '<br><b> {0}:</b> {1}\n'.format(
                     self.sanitize(key), self.sanitize(value))
 
         if self.blank:
@@ -501,13 +504,13 @@ class VNCRDPTableObject(object):
         if self._error_state:
             html = "<tr><td><b><center>{0}:{1}</center></b><br>".format(
                 self.remote_system, str(self.port))
-            html += ("<div id=\"screenshot\"><center>Unable to screenshot<center>"
-                     "</div></td></tr>").format(self._screenshot_path.split('/')[-2] + '/' + self._screenshot_path.split('/')[-1])
+            html += ("<div id=\"screenshot\"><center>Unable to screenshot<center>" "</div></td></tr>").format(
+                self._screenshot_path.split('/')[-2] + '/' + self._screenshot_path.split('/')[-1])
         else:
             html = "<tr><td><b><center>{0}:{1}</center></b><br>".format(
                 self.remote_system, str(self.port))
-            html += ("<div id=\"screenshot\"><img src=\"{0}\">"
-                     "</div></td></tr>").format(self._screenshot_path.split('/')[-2] + '/' + self._screenshot_path.split('/')[-1])
+            html += ("<div id=\"screenshot\"><img src=\"{0}\">" "</div></td></tr>").format(
+                self._screenshot_path.split('/')[-2] + '/' + self._screenshot_path.split('/')[-1])
         return html
 
     def set_paths(self, outdir):

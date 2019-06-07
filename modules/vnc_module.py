@@ -6,8 +6,8 @@ try:
     from rdpy.protocol.rfb import rfb
     from rdpy.ui.qt4 import qtImageFormatFromRFBPixelFormat
 except ImportError:
-    print '[*] VNC Libraries not found.'
-    print '[*] Please run the script in the setup directory!'
+    print('[*] VNC Libraries not found.')
+    print('[*] Please run the script in the setup directory!')
     sys.exit()
 
 
@@ -37,7 +37,7 @@ class RFBScreenShotFactory(rfb.ClientFactory):
         @param connector: twisted connector use for rfb connection (use reconnect to restart connection)
         @param reason: str use to advertise reason of lost connection
         """
-        if not 'Connection was closed cleanly' in str(reason):
+        if 'Connection was closed cleanly' not in str(reason):
             self._dbm.open_connection()
             self._obj.error_state = True
             self._dbm.update_vnc_rdp_object(self._obj)
@@ -47,7 +47,7 @@ class RFBScreenShotFactory(rfb.ClientFactory):
         if(RFBScreenShotFactory.__INSTANCE__ == 0):
             try:
                 self._reactor.stop()
-            except:
+            except BaseException:
                 pass
             self._app.exit()
 
@@ -62,13 +62,13 @@ class RFBScreenShotFactory(rfb.ClientFactory):
             self._obj.error_state = True
             self._dbm.update_vnc_rdp_object(self._obj)
             self._dbm.close()
-        print '[*] Error connecting to {0}:{1}'.format(
-            self._obj.remote_system, self._obj.port)
+        print('[*] Error connecting to {0}:{1}'.format(
+            self._obj.remote_system, self._obj.port))
         RFBScreenShotFactory.__INSTANCE__ -= 1
         if(RFBScreenShotFactory.__INSTANCE__ == 0):
             try:
                 self._reactor.stop()
-            except:
+            except BaseException:
                 pass
             self._app.exit()
 
@@ -95,10 +95,18 @@ class RFBScreenShotFactory(rfb.ClientFactory):
                 self._dbm = dbm
                 self._obj = obj
                 self._complete = False
-                print '[*] Connecting to {0}:{1} (VNC)'.format(
-                    self._obj.remote_system, self._obj.port)
+                print('[*] Connecting to {0}:{1} (VNC)'.format(
+                    self._obj.remote_system, self._obj.port))
 
-            def onUpdate(self, width, height, x, y, pixelFormat, encoding, data):
+            def onUpdate(
+                    self,
+                    width,
+                    height,
+                    x,
+                    y,
+                    pixelFormat,
+                    encoding,
+                    data):
                 """
                 Implement RFBClientObserver interface
                 @param width: width of new image

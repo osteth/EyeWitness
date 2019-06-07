@@ -1,10 +1,10 @@
 import pickle
 import sqlite3
 
-from objects import HTTPTableObject
-from objects import UAObject
-from objects import VNCRDPTableObject
-from helpers import default_creds_category
+from .objects import HTTPTableObject
+from .objects import UAObject
+from .objects import VNCRDPTableObject
+from .helpers import default_creds_category
 
 
 class DB_Manager(object):
@@ -49,7 +49,7 @@ class DB_Manager(object):
         c = self.connection.cursor()
         obj = HTTPTableObject()
         obj.remote_system = remote_system
-        if cli_parsed.active_scan: 
+        if cli_parsed.active_scan:
             obj._active_scan = True
         obj.set_paths(
             cli_parsed.d, 'baseline' if cli_parsed.cycle is not None else None)
@@ -242,10 +242,10 @@ class DB_Manager(object):
                 t = o.category
                 o = default_creds_category(o)
                 if o.category != t:
-                    print '{0} changed to {1}'.format(t, o.category)
+                    print('{0} changed to {1}'.format(t, o.category))
             counter += 1
             if counter % 10 == 0:
-                print '{0}/{1}'.format(counter, total)
+                print('{0}/{1}'.format(counter, total))
             finished.append(o)
         c.close()
         return finished

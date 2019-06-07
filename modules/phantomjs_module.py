@@ -1,14 +1,16 @@
-import httplib
+import http.client
 import os
 import socket
 import time
-import urllib2
+import urllib.request
+import urllib.error
+import urllib.parse
 import sys
 import ssl
 
 try:
     from ssl import CertificateError as sslerr
-except:
+except BaseException:
     from ssl import SSLError as sslerr
 try:
     from selenium import webdriver
@@ -16,8 +18,8 @@ try:
     from selenium.common.exceptions import WebDriverException
     from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 except ImportError:
-    print '[*] selenium not found.'
-    print '[*] Please run the script in the setup directory!'
+    print('[*] selenium not found.')
+    print('[*] Please run the script in the setup directory!')
     sys.exit()
 
 
@@ -83,7 +85,7 @@ def create_driver(cli_parsed, user_agent=None):
             time.sleep(2.5)
             continue
         except Exception as e:
-            print str(e)
+            print(str(e))
 
     return driver
 
@@ -104,19 +106,22 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
         driver.get(http_object.remote_system)
     except KeyboardInterrupt:
         if cli_parsed.single is not None:
-            print '[*] Skipping: {0}'.format(http_object.remote_system)
+            print('[*] Skipping: {0}'.format(http_object.remote_system))
         http_object.error_state = 'Skipped'
         http_object.page_title = 'Page Skipped by User'
         return http_object, driver
     except TimeoutException:
-        print '[*] Hit timeout limit when connecting to {0}, retrying'.format(http_object.remote_system)
+        print(
+            '[*] Hit timeout limit when connecting to {0}, retrying'.format(http_object.remote_system))
         http_object.error_state = 'Timeout'
-    except httplib.BadStatusLine:
-        print '[*] Bad status line when connecting to {0}'.format(http_object.remote_system)
+    except http.client.BadStatusLine:
+        print(
+            '[*] Bad status line when connecting to {0}'.format(http_object.remote_system))
         http_object.error_state = 'BadStatus'
         return http_object, driver
     except WebDriverException:
-        print '[*] WebDriverError when connecting to {0}'.format(http_object.remote_system)
+        print(
+            '[*] WebDriverError when connecting to {0}'.format(http_object.remote_system))
         http_object.error_state = 'BadStatus'
         return http_object, driver
 
@@ -130,23 +135,26 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
                 driver.get(http_object.remote_system)
                 break
             except TimeoutException:
-                print '[*] Hit timeout limit when connecting to {0}'.format(http_object.remote_system)
+                print(
+                    '[*] Hit timeout limit when connecting to {0}'.format(http_object.remote_system))
                 http_object.error_state = 'Timeout'
                 http_object.page_title = 'Timeout Limit Reached'
                 return_status = True
             except KeyboardInterrupt:
-                print '[*] Skipping: {0}'.format(http_object.remote_system)
+                print('[*] Skipping: {0}'.format(http_object.remote_system))
                 http_object.error_state = 'Skipped'
                 http_object.page_title = 'Page Skipped by User'
                 return_status = True
                 break
-            except httplib.BadStatusLine:
-                print '[*] Bad status line when connecting to {0}'.format(http_object.remote_system)
+            except http.client.BadStatusLine:
+                print(
+                    '[*] Bad status line when connecting to {0}'.format(http_object.remote_system))
                 http_object.error_state = 'BadStatus'
                 return_status = True
                 break
             except WebDriverException:
-                print '[*] WebDriverError when connecting to {0}'.format(http_object.remote_system)
+                print(
+                    '[*] WebDriverError when connecting to {0}'.format(http_object.remote_system))
                 http_object.error_state = 'BadStatus'
                 return_status = True
                 break
@@ -162,23 +170,25 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-    except:
+    except BaseException:
         context = None
         pass
 
     try:
         tempua = driver.execute_script("return navigator.userAgent")
-    except:
+    except BaseException:
         tempua = ''
     try:
-        req = urllib2.Request(http_object.remote_system, headers={'User-Agent': tempua})
+        req = urllib.request.Request(
+            http_object.remote_system, headers={
+                'User-Agent': tempua})
         if context is None:
-            opened = urllib2.urlopen(req)
+            opened = urllib.request.urlopen(req)
         else:
-            opened = urllib2.urlopen(req, context=context)
+            opened = urllib.request.urlopen(req, context=context)
         headers = dict(opened.info())
         headers['Response Code'] = str(opened.getcode())
-    except urllib2.HTTPError as e:
+    except urllib.error.HTTPError as e:
         responsecode = e.code
         if responsecode == 404:
             http_object.category = 'notfound'
@@ -190,7 +200,7 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
             http_object.category = 'badreq'
         headers = dict(e.headers)
         headers['Response Code'] = str(e.code)
-    except urllib2.URLError as e:
+    except urllib.error.URLError as e:
         if '104' in str(e.reason):
             headers = {'Error': 'Connection Reset'}
             http_object.error_state = 'ConnReset'
@@ -223,7 +233,7 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
         else:
             http_object.error_state = 'BadStatus'
             return http_object, driver
-    except httplib.BadStatusLine:
+    except http.client.BadStatusLine:
         http_object.error_state = 'BadStatus'
         return http_object, driver
     except sslerr:
@@ -233,7 +243,7 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
     try:
         driver.save_screenshot(http_object.screenshot_path)
     except Exception as e:
-        print driver.remote_system
+        print(driver.remote_system)
 
     try:
         http_object.page_title = 'Unknown' if driver.title == '' else driver.title.encode(
@@ -249,5 +259,5 @@ def capture_host(cli_parsed, http_object, driver, ua=None):
             f.write(http_object.source_code)
     except IOError:
         print("[*] ERROR: URL too long, surpasses max file length.")
-        print("[*] ERROR: Skipping: " + http_object.remote_system)
+        print(("[*] ERROR: Skipping: " + http_object.remote_system))
     return http_object, driver

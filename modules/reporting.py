@@ -1,12 +1,12 @@
 import os
 import sys
-import urlparse
+import urllib.parse
 
 try:
     from fuzzywuzzy import fuzz
 except ImportError:
-    print '[*] fuzzywuzzy not found.'
-    print '[*] Please run the script in the setup directory!'
+    print('[*] fuzzywuzzy not found.')
+    print('[*] Please run the script in the setup directory!')
     sys.exit()
 
 
@@ -32,7 +32,7 @@ def process_group(
         String: HTML representing current report page
     """
     group_data = sorted([x for x in data if x.category == group],
-                        key=lambda (k): k.page_title)
+                        key=lambda k: k.page_title)
 
     grouped_elements = []
     if len(group_data) == 0:
@@ -42,7 +42,7 @@ def process_group(
             sectionid, section)
     else:
         toc += ("<li><a href=\"report_page{0}.html#{1}\">{2} (Page {0})</a></li>").format(
-            str(page_num+1), sectionid, section)
+            str(page_num + 1), sectionid, section)
 
     html += "<h2 id=\"{0}\">{1}</h2>".format(sectionid, section)
     unknowns = [x for x in group_data if x.page_title == 'Unknown']
@@ -52,7 +52,7 @@ def process_group(
         temp = [x for x in group_data if fuzz.token_sort_ratio(
             test_element.page_title, x.page_title) >= 70]
         temp.append(test_element)
-        temp = sorted(temp, key=lambda (k): k.page_title)
+        temp = sorted(temp, key=lambda k: k.page_title)
         grouped_elements.extend(temp)
         group_data = [x for x in group_data if fuzz.token_sort_ratio(
             test_element.page_title, x.page_title) < 70]
@@ -79,7 +79,7 @@ def write_vnc_rdp_data(cli_parsed, data):
         if len(x) == 0:
             return
         pages = []
-        html = u""
+        html = ""
         counter = 1
         proto = x[0].proto
         header = vnc_rdp_header(cli_parsed.date, cli_parsed.time)
@@ -90,10 +90,10 @@ def write_vnc_rdp_data(cli_parsed, data):
                 html = (header + "EW_REPLACEME" + table_head + html +
                         "</table><br>")
                 pages.append(html)
-                html = u""
+                html = ""
             counter += 1
 
-        if html != u"":
+        if html != "":
             html = (header + "EW_REPLACEME" + table_head + html +
                     "</table><br>")
             pages.append(html)
@@ -108,32 +108,35 @@ def write_vnc_rdp_data(cli_parsed, data):
             bottom_text += (
                 "<a href=\"{0}_report.html\"> Page 1</a>").format(proto)
             for i in range(2, num_pages):
-                bottom_text += ("<a href=\"{0}_report_page{1}.html\"> Page {1}</a>").format(proto,
-                                                                                            str(i))
+                bottom_text += ("<a href=\"{0}_report_page{1}.html\"> Page {1}</a>").format(
+                    proto, str(i))
             bottom_text += "</center>\n"
             top_text = bottom_text
             for i in range(0, len(pages)):
                 headfoot = "<center>"
                 if i == 0:
-                    headfoot += ("<a href=\"{0}_report_page2.html\"> Next Page "
-                                 "</a></center>").format(proto)
+                    headfoot += (
+                        "<a href=\"{0}_report_page2.html\"> Next Page "
+                        "</a></center>").format(proto)
                 elif i == len(pages) - 1:
                     if i == 1:
-                        headfoot += ("<a href=\"{0}_report.html\">Previous Page"
-                                     "</a>&nbsp</center>").format(proto)
+                        headfoot += (
+                            "<a href=\"{0}_report.html\">Previous Page"
+                            "</a>&nbsp</center>").format(proto)
                     else:
                         headfoot += ("<a href=\"{0}_report_page{1}.html\"> Previous Page "
                                      "</a></center>").format(proto, str(i))
                 elif i == 1:
                     headfoot += ("<a href=\"{0}_report.html\">Previous Page</a>&nbsp"
                                  "<a href=\"{0}_report_page{1}.html\"> Next Page"
-                                 "</a></center>").format(proto, str(i+2))
+                                 "</a></center>").format(proto, str(i + 2))
                 else:
                     headfoot += ("<a href=\"{0}_report_page{1}.html\">Previous Page</a>"
                                  "&nbsp<a href=\"{0}_report_page{2}.html\"> Next Page"
-                                 "</a></center>").format(proto, str(i), str(i+2))
+                                 "</a></center>").format(proto, str(i), str(i + 2))
                 pages[i] = pages[i].replace(
-                    'EW_REPLACEME', headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
+                    'EW_REPLACEME',
+                    headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
 
             with open(os.path.join(cli_parsed.d, proto + '_report.html'), 'a') as f:
                 f.write(pages[0])
@@ -186,7 +189,7 @@ def sort_data_and_write(cli_parsed, data):
 
     # Generate and write json log of requests
     for json_request in data:
-        url = urlparse.urlparse(json_request._remote_system)
+        url = urllib.parse.urlparse(json_request._remote_system)
 
         # Determine protocol
         csv_request_data += "\n" + url.scheme + ","
@@ -203,7 +206,7 @@ def sort_data_and_write(cli_parsed, data):
             print("Possible bad url (improperly formatted) in the URL list.")
             print("Fix your list and re-try. Killing EyeWitness....")
             sys.exit(1)
-        if json_request._error_state == None:
+        if json_request._error_state is None:
             csv_request_data += "Successful,"
         else:
             csv_request_data += json_request._error_state + ","
@@ -215,10 +218,10 @@ def sort_data_and_write(cli_parsed, data):
 
     # Pre-filter error entries
     errors = sorted([x for x in data if x.error_state is not None],
-                    key=lambda (k): (k.error_state, k.page_title))
+                    key=lambda k: (k.error_state, k.page_title))
     data[:] = [x for x in data if x.error_state is None]
-    data = sorted(data, key=lambda (k): k.page_title)
-    html = u""
+    data = sorted(data, key=lambda k: k.page_title)
+    html = ""
     # Loop over our categories and populate HTML
     for cat in categories:
         grouped, toc, toc_table, html = process_group(
@@ -229,11 +232,12 @@ def sort_data_and_write(cli_parsed, data):
         for obj in grouped:
             pcount += 1
             html += obj.create_table_html()
-            if (counter % cli_parsed.results == 0) or (counter == (total_results) -1):
+            if (counter % cli_parsed.results == 0) or (
+                    counter == (total_results) - 1):
                 html = (web_index_head + "EW_REPLACEME" + html +
                         "</table><br>")
                 pages.append(html)
-                html = u""
+                html = ""
                 if pcount < len(grouped):
                     html += table_head
             counter += 1
@@ -246,11 +250,12 @@ def sort_data_and_write(cli_parsed, data):
         html += table_head
         for obj in errors:
             html += obj.create_table_html()
-            if (counter % cli_parsed.results == 0) or (counter == (total_results)):
+            if (counter % cli_parsed.results == 0) or (
+                    counter == (total_results)):
                 html = (web_index_head + "EW_REPLACEME" + html +
                         "</table><br>")
                 pages.append(html)
-                html = u"" + table_head
+                html = "" + table_head
             counter += 1
 
     # Close out any stuff thats hanging
@@ -260,7 +265,7 @@ def sort_data_and_write(cli_parsed, data):
     toc_table += "<tr><th>Total</th><td>{0}</td></tr>".format(total_results)
     toc_table += "</table>"
 
-    if (html != u"") and (counter - total_results != 0):
+    if (html != "") and (counter - total_results != 0):
         html = (web_index_head + "EW_REPLACEME" + html +
                 "</table><br>")
         pages.append(html)
@@ -280,11 +285,12 @@ def sort_data_and_write(cli_parsed, data):
         # Generate our header/footer data here
         for i in range(2, num_pages):
             badd_page = "</center>EW_REPLACEME<table border=\"1\">\n        <tr>\n        <th>Web Request Info</th>\n        <th>Web Screenshot</th>\n        </tr></table><br>"
-            if badd_page in pages[i-1]:
+            if badd_page in pages[i - 1]:
                 skip_last_dummy = True
                 pass
             else:
-                bottom_text += ("<a href=\"report_page{0}.html\"> Page {0}</a>").format(str(i))
+                bottom_text += (
+                    "<a href=\"report_page{0}.html\"> Page {0}</a>").format(str(i))
         bottom_text += "</center>\n"
         top_text = bottom_text
         # Generate our next/previous page buttons
@@ -307,15 +313,16 @@ def sort_data_and_write(cli_parsed, data):
             elif i == 1:
                 headfoot += ("<a href=\"report.html\">Previous Page</a>&nbsp"
                              "<a href=\"report_page{0}.html\"> Next Page"
-                             "</a></center>").format(str(i+2))
+                             "</a></center>").format(str(i + 2))
             else:
                 headfoot += ("<a href=\"report_page{0}.html\">Previous Page</a>"
                              "&nbsp<a href=\"report_page{1}.html\"> Next Page"
-                             "</a></center>").format(str(i), str(i+2))
+                             "</a></center>").format(str(i), str(i + 2))
             # Finalize our pages by replacing placeholder stuff and writing out
             # the headers/footers
             pages[i] = pages[i].replace(
-                'EW_REPLACEME', headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
+                'EW_REPLACEME',
+                headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
 
         # Write out our report to disk!
         if len(pages) == 0:
@@ -327,7 +334,7 @@ def sort_data_and_write(cli_parsed, data):
         for i in range(2, write_out + 1):
             bad_page = "<table border=\"1\">\n        <tr>\n        <th>Web Request Info</th>\n        <th>Web Screenshot</th>\n        </tr></table><br>\n<center><br><a "
             badd_page2 = "</center>EW_REPLACEME<table border=\"1\">\n        <tr>\n        <th>Web Request Info</th>\n        <th>Web Screenshot</th>\n        </tr></table><br>"
-            if (bad_page in pages[i-1]) or (badd_page2 in pages[i-1]):
+            if (bad_page in pages[i - 1]) or (badd_page2 in pages[i - 1]):
                 pass
             else:
                 with open(os.path.join(cli_parsed.d, 'report_page{0}.html'.format(str(i))), 'w') as f:
@@ -433,8 +440,8 @@ def search_report(cli_parsed, data, search_term):
     counter = 1
 
     data[:] = [x for x in data if x.error_state is None]
-    data = sorted(data, key=lambda (k): k.page_title)
-    html = u""
+    data = sorted(data, key=lambda k: k.page_title)
+    html = ""
 
     # Add our errors here (at the very very end)
     html += '<h2>Results for {0}</h2>'.format(search_term)
@@ -445,10 +452,10 @@ def search_report(cli_parsed, data, search_term):
             html = (web_index_head + "EW_REPLACEME" + html +
                     "</table><br>")
             pages.append(html)
-            html = u"" + table_head
+            html = "" + table_head
         counter += 1
 
-    if html != u"":
+    if html != "":
         html = (web_index_head + html + "</table><br>")
         pages.append(html)
 
@@ -462,8 +469,8 @@ def search_report(cli_parsed, data, search_term):
         bottom_text += ("<a href=\"search.html\"> Page 1</a>")
         # Generate our header/footer data here
         for i in range(2, num_pages):
-            bottom_text += ("<a href=\"search_page{0}.html\"> Page {0}</a>").format(
-                str(i))
+            bottom_text += (
+                "<a href=\"search_page{0}.html\"> Page {0}</a>").format(str(i))
         bottom_text += "</center>\n"
         top_text = bottom_text
         # Generate our next/previous page buttons
@@ -482,15 +489,16 @@ def search_report(cli_parsed, data, search_term):
             elif i == 1:
                 headfoot += ("<a href=\"search.html\">Previous Page</a>&nbsp"
                              "<a href=\"search_page{0}.html\"> Next Page"
-                             "</a></center>").format(str(i+2))
+                             "</a></center>").format(str(i + 2))
             else:
                 headfoot += ("<a href=\"search_page{0}.html\">Previous Page</a>"
                              "&nbsp<a href=\"search_page{1}.html\"> Next Page"
-                             "</a></center>").format(str(i), str(i+2))
+                             "</a></center>").format(str(i), str(i + 2))
             # Finalize our pages by replacing placeholder stuff and writing out
             # the headers/footers
             pages[i] = pages[i].replace(
-                'EW_REPLACEME', headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
+                'EW_REPLACEME',
+                headfoot + top_text) + bottom_text + '<br>' + headfoot + '</body></html>'
 
         # Write out our report to disk!
         if len(pages) == 0:

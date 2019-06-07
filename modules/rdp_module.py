@@ -11,8 +11,8 @@ try:
     from PIL import Image
     import pytesseract
 except ImportError:
-    print '[*] RDP libraries not found.'
-    print '[*] Please run the script in the setup directory!'
+    print('[*] RDP libraries not found.')
+    print('[*] Please run the script in the setup directory!')
     sys.exit()
 
 # set log level
@@ -23,14 +23,14 @@ oslist = {(24, 93, 124): "Windows Server 2008 or Windows 7 Enterprise",
           (0, 15, 34): "Windows 10",
           (24, 1, 83): "Windows 8.1",
           (0, 77, 155): "Windows XP",
-}
+          }
 
 croplist = {(24, 93, 124): (480, 455, 750, 490),
             (9, 24, 67): (390, 400, 600, 450),
             (0, 15, 34): (480, 440, 730, 460),
             (24, 1, 83): (390, 400, 600, 450),
             (0, 77, 155): (475, 285, 730, 305),
-}
+            }
 
 
 class RDPScreenShotFactory(rdp.ClientFactory):
@@ -41,7 +41,16 @@ class RDPScreenShotFactory(rdp.ClientFactory):
     __INSTANCE__ = 0
     __STATE__ = []
 
-    def __init__(self, reactor, app, width, height, path, timeout, rdp_obj, dbm=None):
+    def __init__(
+            self,
+            reactor,
+            app,
+            width,
+            height,
+            path,
+            timeout,
+            rdp_obj,
+            dbm=None):
         """
         @param reactor: twisted reactor
         @param width: {integer} width of screen
@@ -78,7 +87,7 @@ class RDPScreenShotFactory(rdp.ClientFactory):
         if(RDPScreenShotFactory.__INSTANCE__ == 0):
             try:
                 self._reactor.stop()
-            except:
+            except BaseException:
                 pass
             self._app.exit()
 
@@ -94,14 +103,14 @@ class RDPScreenShotFactory(rdp.ClientFactory):
             self._object.error_state = True
             self._dbm.update_vnc_rdp_object(self._object)
             self._dbm.close()
-        print '[*] Error connecting to {0}'.format(self._object.remote_system)
+        print('[*] Error connecting to {0}'.format(self._object.remote_system))
         RDPScreenShotFactory.__STATE__.append(
             (connector.host, connector.port, reason))
         RDPScreenShotFactory.__INSTANCE__ -= 1
         if(RDPScreenShotFactory.__INSTANCE__ == 0):
             try:
                 self._reactor.stop()
-            except:
+            except BaseException:
                 pass
             self._app.exit()
 
@@ -117,7 +126,16 @@ class RDPScreenShotFactory(rdp.ClientFactory):
             @summary: observer that connect, cache every image received and save at deconnection
             """
 
-            def __init__(self, controller, width, height, path, timeout, reactor, dbm, obj):
+            def __init__(
+                    self,
+                    controller,
+                    width,
+                    height,
+                    path,
+                    timeout,
+                    reactor,
+                    dbm,
+                    obj):
                 """
                 @param controller: {RDPClientController}
                 @param width: {integer} width of screen
@@ -136,9 +154,20 @@ class RDPScreenShotFactory(rdp.ClientFactory):
                 self._dbm = dbm
                 self._obj = obj
                 self._complete = False
-                print '[*] Connecting to {0} (RDP)'.format(self._obj.remote_system)
+                print(
+                    '[*] Connecting to {0} (RDP)'.format(self._obj.remote_system))
 
-            def onUpdate(self, destLeft, destTop, destRight, destBottom, width, height, bitsPerPixel, isCompress, data):
+            def onUpdate(
+                    self,
+                    destLeft,
+                    destTop,
+                    destRight,
+                    destBottom,
+                    width,
+                    height,
+                    bitsPerPixel,
+                    isCompress,
+                    data):
                 """
                 @summary: callback use when bitmap is received
                 """
@@ -147,7 +176,17 @@ class RDPScreenShotFactory(rdp.ClientFactory):
                 with QtGui.QPainter(self._buffer) as qp:
                     # draw image
                     qp.drawImage(
-                        destLeft, destTop, image, 0, 0, destRight - destLeft + 1, destBottom - destTop + 1)
+                        destLeft,
+                        destTop,
+                        image,
+                        0,
+                        0,
+                        destRight -
+                        destLeft +
+                        1,
+                        destBottom -
+                        destTop +
+                        1)
                     self._complete = True
                 if not self._startTimeout:
                     self._startTimeout = False
@@ -212,19 +251,22 @@ def capture_host(cli_parsed, rdp_object):
 def parse_screenshot(directory, rdp_object):
     log._LOG_LEVEL = log.Level.ERROR
     img = Image.open(rdp_object.screenshot_path)
-    pixel = img.getpixel((img.width-10, 10))
+    pixel = img.getpixel((img.width - 10, 10))
     try:
         crop_image = img.crop(croplist[pixel])
         user = pytesseract.image_to_string(crop_image)
         user = user.rpartition("\n")[2]
         with open(directory + "/users.txt", "a") as f:
-            f.write(user+"\n")
+            f.write(user + "\n")
         with open(directory + "/os.txt", "a") as f:
             f.write(str(rdp_object.remote_system) + ":\n")
-            f.write(oslist[pixel]+"\n")
+            f.write(oslist[pixel] + "\n")
         with open(directory + "/domains.txt", "a") as f:
             f.write(user.partition("\\")[0] + "\n")
     except KeyError:
         with open(directory + "/os.txt", "a") as f:
             f.write(str(rdp_object.remote_system) + ":\n")
-            f.write("No valid OS found. Please add "+str(pixel)+" to oslist and determine where the username is located and add this area to croplist (both located in rdp_module)")
+            f.write(
+                "No valid OS found. Please add " +
+                str(pixel) +
+                " to oslist and determine where the username is located and add this area to croplist (both located in rdp_module)")
